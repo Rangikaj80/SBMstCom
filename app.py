@@ -8,7 +8,9 @@ import json
 
 # Initialize database
 def init_db():
-    conn = sqlite3.connect(':memory:')  # Use ':memory:' for testing
+   
+    conn = sqlite3.connect('./shop_management.db')
+
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users
                 (username TEXT PRIMARY KEY, password TEXT)''')
@@ -69,11 +71,24 @@ def calculate_bank_balance():
     conn.close()
     return total_deposits - total_cheques
 
-# Initialize the database
-init_db()
+def auth_page():
+    try:
+        # Existing code...
+        conn = sqlite3.connect('./shop_management.db')
+        c = conn.cursor()
+        # Perform your database operations here
+    except sqlite3.OperationalError as e:
+        st.error("Database connection failed. Please try restarting the app.")
+        st.stop()
+    finally:
+        conn.close()
+
 
 # Main app
 def main():
+    
+    init_db()  # Ensure the database is initialized before any queries
+    
     st.title('Business Management System')
     
     if 'user' not in st.session_state:
