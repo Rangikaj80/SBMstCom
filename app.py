@@ -6,11 +6,10 @@ import bcrypt
 import sqlite3
 import json
 
+
 # Initialize database
 def init_db():
-   
-    conn = sqlite3.connect('./shop_management.db')
-
+    conn = sqlite3.connect('shop_management.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users
                 (username TEXT PRIMARY KEY, password TEXT)''')
@@ -22,7 +21,6 @@ def init_db():
                  amount REAL, payee TEXT, status TEXT)''')
     conn.commit()
     conn.close()
-
 
 # Helper functions
 def hash_password(password):
@@ -71,24 +69,11 @@ def calculate_bank_balance():
     conn.close()
     return total_deposits - total_cheques
 
-def auth_page():
-    try:
-        # Existing code...
-        conn = sqlite3.connect('./shop_management.db')
-        c = conn.cursor()
-        # Perform your database operations here
-    except sqlite3.OperationalError as e:
-        st.error("Database connection failed. Please try restarting the app.")
-        st.stop()
-    finally:
-        conn.close()
-
+# Initialize the database
+init_db()
 
 # Main app
 def main():
-    
-    init_db()  # Ensure the database is initialized before any queries
-    
     st.title('Business Management System')
     
     if 'user' not in st.session_state:
@@ -101,9 +86,11 @@ def main():
         # Display bank balance
         bank_balance = calculate_bank_balance()
         st.sidebar.metric("Bank Balance", f"LKR{bank_balance:.2f}")
-        
+        # Add 'Prediction' to the navigation menu
+
+
         # Navigation
-        page = st.sidebar.selectbox('Navigate', ['Daily Sales', 'Bank Transactions', 'Sales Visualization'])
+        page = st.sidebar.selectbox('Navigate', ['Daily Sales', 'Bank Transactions', 'Sales Visualization', 'Prediction'])
         
         if page == 'Daily Sales':
             daily_sales_page()
@@ -111,6 +98,8 @@ def main():
             bank_transactions_page()
         elif page == 'Sales Visualization':
             sales_visualization_page()
+        elif page == 'Prediction':
+            prediction_page()
     else:
         auth_page()
 
@@ -246,6 +235,47 @@ def sales_visualization_page():
         st.plotly_chart(fig_shop)
     else:
         st.info("No sales data available for visualization.")
+
+def prediction_page():
+    st.header("Sales Prediction")
+    
+    
+
+
+    # Load prediction data
+    predicted_stock = pd.read_csv('next_month_stock_predictions.csv')
+
+    # Streamlit app
+    st.title("Stock Quantity Prediction Application")
+
+    st.sidebar.header("Filter Options")
+
+    # Shop name selection
+    shop_names = predicted_stock['ShopName'].unique()
+    selected_shop = st.sidebar.selectbox("Select Shop Name", shop_names)
+
+    # Filter by shop
+    filtered_data = predicted_stock[predicted_stock['ShopName'] == selected_shop]
+
+    # Item selection
+    items = filtered_data['Item'].unique()
+    selected_item = st.sidebar.selectbox("Select Item", items)
+
+    # Filter by item
+    item_data = filtered_data[filtered_data['Item'] == selected_item]
+
+    # Display the prediction
+    if not item_data.empty:
+        predicted_quantity = item_data.iloc[0]['Predicted_Quantity']
+        st.write(f"### Predicted Quantity for {selected_item} in {selected_shop}: {predicted_quantity}")
+    else:
+        st.write("No data available for the selected filters.")
+
+    # Display the full dataset
+    st.write("### Full Prediction Data")
+    st.dataframe(predicted_stock)
+
+
 
 if __name__ == "__main__":
     main()
